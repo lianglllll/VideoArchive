@@ -841,12 +841,6 @@ function closeGameModal() {
 }
 
 /* ------------------------------------------------------------------ 游戏封面 */
-function gameVideosFor(gameName) {
-  const key = String(gameName || '')
-  if (!key) return []
-  return (state.videos || []).filter((item) => String(item.user?.game || '') === key && item.cover)
-}
-
 function paintGameCover(url, label) {
   const box = $('#gCover')
   if (!box) return
@@ -856,65 +850,41 @@ function paintGameCover(url, label) {
 }
 
 function initGameCover(game) {
-  state.editingGameCover = game?.coverId || ''
-  const strip = $('#gCoverStrip')
-  if (strip) {
-    strip.hidden = true
-    strip.innerHTML = ''
-  }
-  if (!game) {
-    paintGameCover('', '默认')
-    const pick = $('#gCoverPick')
-    if (pick) pick.disabled = true
-    const auto = $('#gCoverAuto')
-    if (auto) auto.disabled = true
-    return
-  }
+  state.editingGameCover = game?.cover || ''
+  paintGameCover(game?.cover || '', '默认')
   const pick = $('#gCoverPick')
-  if (pick) pick.disabled = false
+  if (pick) pick.disabled = !game
   const auto = $('#gCoverAuto')
-  if (auto) auto.disabled = false
-
-  const chosen = game.cover ? (state.videos || []).find((item) => item.id === game.cover) : null
-  paintGameCover(chosen?.cover || game.cover || '', chosen ? '' : '默认')
+  if (auto) auto.disabled = !game
+  const file = $('#gCoverFile')
+  if (file) file.value = ''
 }
 
-function toggleCoverStripOff() {
-  const strip = $('#gCoverStrip')
-  if (strip) {
-    strip.hidden = true
-    strip.innerHTML = ''
-  }
-}
-function toggleCoverStrip() {
-  const strip = $('#gCoverStrip')
-  if (!strip) return
-  if (!strip.hidden) {
-    strip.hidden = true
+async function uploadGameCover(file) {
+  const id = state.editingGame
+  if (!id || !file) return
+  if (file.size > 8 * 1024 * 1024) {
+    toast('图片太大了（最多 8MB）', 'err')
     return
   }
-  const game = (state.games || []).find((item) => item.id === state.editingGame)
-  const list = gameVideosFor(game?.name)
-  if (!list.length) {
-    toast('这个游戏下面还没有带封面的视频', 'err')
-    return
-  }
-  strip.innerHTML = list
-    .map(
-      (item) =>
-        `<button type="button" data-cover-id="${esc(item.id)}" class="${item.id === state.editingGameCover ? 'on' : ''}" title="${esc(item.name)}"><img src="${esc(item.cover)}" alt="" /></button>`,
-    )
-    .join('')
-  strip.hidden = false
-  strip.querySelectorAll('button').forEach((node) => {
-    node.onclick = () => {
-      state.editingGameCover = node.dataset.coverId || ''
-      const picked = list.find((item) => item.id === state.editingGameCover)
-      paintGameCover(picked?.cover || '', '')
-      strip.querySelectorAll('button').forEach((other) => other.classList.toggle('on', other === node))
-    }
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('读不了这个文件'))
+    reader.readAsDataURL(file)
   })
+  try {
+    const result = await api('/game-cover', { method: 'POST', body: { id, data } })
+    const updated = (result.view?.games || []).find((item) => item.id === id)
+    state.games = result.view?.games || state.games
+    state.editingGameCover = updated?.coverId || ''
+    paintGameCover(updated?.cover || '', '默认')
+    toast('封面换好了')
+  } catch (error) {
+    toast(friendlyError(error), 'err')
+  }
 }
+
 async function saveGame() {
   const id = state.editingGame
   const payload = {
@@ -1345,8 +1315,16 @@ function bind() {
   })
 
   $('#gSave').onclick = () => saveGame()
-  $('#gCoverPick').onclick = () => toggleCoverStrip()
-  $('#gCoverAuto').onclick = () => { state.editingGameCover = ''; toggleCoverStripOff(); const g = (state.games || []).find((item) => item.id === state.editingGame); paintGameCover(g?.cover || '', '默认') }
+  $('#gCoverPick').onclick = () => $('#gCoverFile').click()
+  $('#gCoverFile').onchange = (event) => {
+    const file = event.target.files && event.target.files[0]
+    event.target.value = ''
+    if (file) uploadGameCover(file)
+  }
+  $('#gCoverAuto').onclick = () => {
+    state.editingGameCover = ''
+    paintGameCover('', '默认')
+  }
   $('#gMergeBtn').onclick = () => mergeGame()
   $('#gDelete').onclick = () => deleteGame()
   ;['#gName', '#gAliases'].forEach((selector) => {

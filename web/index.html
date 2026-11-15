@@ -184,13 +184,13 @@
           <input id="gAliases" placeholder="例如 ELDEN RING, 老头环" />
         </label>
         <div class="field">
-          <span>封面（默认取这个游戏第一条有封面的视频）</span>
+          <span>封面（不传就用第一条有封面的视频）</span>
           <div class="row">
             <div class="game-cover" id="gCover"><div class="placeholder">默认</div></div>
-            <button class="btn" id="gCoverPick">从视频里选…</button>
+            <button class="btn" id="gCoverPick">上传图片</button>
             <button class="btn ghost" id="gCoverAuto">用默认</button>
           </div>
-          <div class="cover-strip" id="gCoverStrip" hidden></div>
+          <input type="file" id="gCoverFile" accept="image/png,image/jpeg,image/webp" hidden />
         </div>
 
         <div class="field">
