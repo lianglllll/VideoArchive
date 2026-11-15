@@ -193,7 +193,10 @@ function renderBanner() {
   banner.hidden = !broken
   if (!broken) return
   const dir = storage?.dataDir || ''
-  $('#bannerText').textContent = `档案目录现在用不了：${dir}（外接盘没接？）—— 先只读，别填新东西；接回来点「重试」。${storage.error ? ` ${storage.error}` : ''}`
+  const reason = String(storage.error || '')
+  $('#bannerText').textContent = /ENOENT|no such file|can't create|ENOTDIR/i.test(reason)
+    ? `找不到档案目录：${dir}`
+    : `档案目录读不了：${dir}`
 }
 
 async function retryStorage() {
