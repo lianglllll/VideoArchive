@@ -179,6 +179,7 @@ async function pickScanFolder() {
   try {
     const result = await api('/pick-folder', { method: 'POST', body: {} })
     if (result.path) {
+      if (button) button.textContent = '准备中…'
       await patchConfig({ scanFolder: result.path })
       toast('存好了，正在扫这个文件夹…')
       runScanFolder(false)
@@ -281,13 +282,19 @@ async function saveSetup() {
     toast('先填一个文件夹路径，或者点「选择文件夹…」', 'err')
     return
   }
+  // 先关弹窗再干活：外接机械盘冷启动时建档要等盘片起转，不能让弹窗卡在那儿
+  closeSetupModal()
+  const button = $('#setupSave')
+  if (button) button.disabled = true
+  toast('正在准备档案目录（机械盘可能要几秒）…')
   try {
     await patchConfig({ scanFolder: folder })
-    closeSetupModal()
     toast('好了，正在扫里面的视频…')
     runScanFolder(false)
   } catch (error) {
-    toast(error.message, 'err')
+    toast(friendlyError(error), 'err')
+  } finally {
+    if (button) button.disabled = false
   }
 }
 
@@ -1149,10 +1156,9 @@ function startPolling() {
       if (!live.busy) {
         state.polling = false
         state.pollTimer = null
-        if (filled !== state.lastFilled) {
-          state.lastFilled = filled
-          await load({ silent: true })
-        }
+        // 队列跑完了：无条件重新拉一次列表，抽帧补上的封面和时长才会出现
+        state.lastFilled = filled
+        await load({ silent: true })
         renderJobs()
         return
       }
