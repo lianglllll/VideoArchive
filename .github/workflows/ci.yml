@@ -25,3 +25,6 @@ jobs:
 
       - name: 插件能加载（假 ctx 跑一遍 apply）
         run: node dev/apply-test.js
+
+      - name: 断盘保护（只读 / 不覆盖 / 恢复）
+        run: node dev/test-storage-guard.mjs

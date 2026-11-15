@@ -2,6 +2,16 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号用 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 新增
+
+- 断盘保护：档案目录读不到 / 写不进时进入**只读模式**，界面顶部弹橙色横幅说明原因，并给「重试」按钮
+- `readJsonStrict`：区分「文件不存在（全新库）」和「读不了（盘掉了/坏了）」，后者绝不当空库用，杜绝恢复后覆盖历史记录
+- 写盘失败不再静默：写不进去立刻降级只读并记录原因，`/api/state` 里带 `storage` 状态
+- `POST /api/reload`：接回外接盘后一键重新读盘
+- `dev/test-storage-guard.mjs`：三个场景的自测（盘不在 / index 损坏 / 修好后恢复），已加入 CI
+
 ## [0.1.7] - 2026-11-15
 
 ### 变更

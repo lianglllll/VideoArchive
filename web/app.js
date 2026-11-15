@@ -184,6 +184,32 @@ async function pickScanFolder() {
   }
 }
 
+/* ------------------------------------------------------------------ 档案目录失联横幅 */
+function renderBanner() {
+  const banner = $('#banner')
+  if (!banner) return
+  const storage = state.live?.storage
+  const broken = storage && storage.ok === false
+  banner.hidden = !broken
+  if (!broken) return
+  const dir = storage?.dataDir || ''
+  $('#bannerText').textContent = `档案目录现在用不了：${dir}（外接盘没接？）—— 先只读，别填新东西；接回来点「重试」。${storage.error ? ` ${storage.error}` : ''}`
+}
+
+async function retryStorage() {
+  const button = $('#btnRetryStorage')
+  button.disabled = true
+  try {
+    const result = await api('/reload', { method: 'POST', body: {} })
+    toast(result.ok ? `接上了，读到 ${result.videos} 条记录` : `还是不行：${result.error}`, result.ok ? '' : 'err')
+    await load({ silent: true })
+  } catch (error) {
+    toast(error.message, 'err')
+  } finally {
+    button.disabled = false
+  }
+}
+
 /* ------------------------------------------------------------------ 首次引导 */
 function openSetupModal() {
   const config = state.live?.config || {}
@@ -269,6 +295,8 @@ function render() {
   }
   if (stats.totalBytes) parts.push(bytes(stats.totalBytes))
   $('#subtitle').textContent = parts.join(' · ')
+
+  renderBanner()
 
   // 设了扫描文件夹才显示「再扫一遍」
   const rescan = $('#btnRescan')
@@ -1229,6 +1257,7 @@ function bind() {
   })
 
   $('#btnRescan').onclick = () => runScanFolder(true)
+  $('#btnRetryStorage').onclick = () => retryStorage()
   $('#setupBrowse').onclick = () => pickFolderNative()
   $('#setupSave').onclick = () => saveSetup()
   $('#setupSkip').onclick = () => {

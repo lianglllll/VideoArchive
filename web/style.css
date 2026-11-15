@@ -1518,3 +1518,29 @@ select.chip {
 .path-box.empty {
   color: var(--faint);
 }
+/* 档案目录不可用时的横幅 */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 176, 84, 0.4);
+  background: rgba(255, 176, 84, 0.1);
+  border-radius: 10px;
+  color: #ffcf94;
+  font-size: 12.5px;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.banner .btn {
+  flex: none;
+  height: 30px;
+  font-size: 12px;
+  padding: 0 12px;
+}
