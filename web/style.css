@@ -1486,3 +1486,35 @@ select.chip {
     width: 150px;
   }
 }
+
+/* 录像文件夹：只读显示，点一下换文件夹 */
+.path-box {
+  flex: 1;
+  min-width: 220px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.path-box:hover {
+  border-color: var(--line-strong);
+  background: var(--panel);
+}
+
+.path-box.empty {
+  color: var(--faint);
+}

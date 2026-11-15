@@ -155,6 +155,35 @@ async function removeVideo(withFile) {
   }
 }
 
+/* ------------------------------------------------------------------ 设置里的「录像文件夹」 */
+let pickingFolder = false
+async function pickScanFolder() {
+  if (pickingFolder) return
+  pickingFolder = true
+  const button = $('#btnPickFolder')
+  const label = button ? button.textContent : ''
+  if (button) {
+    button.disabled = true
+    button.textContent = '等选择…'
+  }
+  try {
+    const result = await api('/pick-folder', { method: 'POST', body: {} })
+    if (result.path) {
+      await patchConfig({ scanFolder: result.path })
+      toast('存好了，正在扫这个文件夹…')
+      runScanFolder(false)
+    }
+  } catch (error) {
+    toast(error.message, 'err')
+  } finally {
+    pickingFolder = false
+    if (button) {
+      button.disabled = false
+      button.textContent = label
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ 首次引导 */
 function openSetupModal() {
   const config = state.live?.config || {}
@@ -179,8 +208,7 @@ function maybeShowSetup() {
   openSetupModal()
 }
 
-async function pickFolderNative() {
-  const button = $('#setupBrowse')
+async function pickFolderNative() {  const button = $('#setupBrowse')
   const label = button.textContent
   button.disabled = true
   button.textContent = '等选择…'
@@ -958,7 +986,11 @@ async function saveDetail() {
 function renderSettings() {
   const config = state.live?.config || {}
   $('#cfgFrames').value = String(config.frames || 6)
-  if (document.activeElement?.id !== 'cfgScanFolder') $('#cfgScanFolder').value = config.scanFolder || ''
+  const folder = String(config.scanFolder || '')
+  const folderBox = $('#cfgScanFolder')
+  folderBox.textContent = folder || '还没选文件夹'
+  folderBox.classList.toggle('empty', !folder)
+  folderBox.title = folder ? `${folder}（点一下换）` : '点一下选一个录像文件夹'
   $('#cfgScanDeep').checked = config.scanDeep === true
   renderDeps()
 }
@@ -1218,7 +1250,8 @@ function bind() {
   }
 
   $('#cfgFrames').onchange = (event) => patchConfig({ frames: Number(event.target.value) })
-  $('#cfgScanFolder').onchange = (event) => patchConfig({ scanFolder: event.target.value.trim() })
+  $('#btnPickFolder').onclick = () => pickScanFolder()
+  $('#cfgScanFolder').onclick = () => pickScanFolder()
   $('#cfgScanDeep').onchange = (event) => patchConfig({ scanDeep: event.target.checked })
 
   $('#btnCheckEnv').onclick = async () => {
