@@ -224,18 +224,3 @@ mkv / flv / avi 这类格式浏览器支持不好，点详情里的 📂 打开�
 node dev/run.js        # 独立端口 5188，调界面用
 node dev/apply-test.js # 用假 ctx 跑一遍插件加载
 ```
-
-`dev/read-asar.mjs`、`dev/asar-grep.mjs` 可以从 DSH 的 app.asar 里读 SDK 源码（排查接口用）。
-
-### 改完怎么发版
-
-```powershell
-node dev/apply-test.js      # 1. 确认插件还能加载
-# 2. 更新 CHANGELOG.md，改 package.json 的 version
-git add -A
-git commit -m "feat: 说清楚改了什么"
-git push
-git tag v0.1.0 && git push --tags   # 3. 打个版本标记
-```
-
-版本号规则：修 bug 用 `0.1.x`，加功能用 `0.x.0`，改数据格式/不兼容用 `x.0.0`。
