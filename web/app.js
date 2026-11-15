@@ -908,6 +908,7 @@ function renderSettings() {
   $('#cfgMoveTarget').disabled = config.moveEnabled !== true
   $('#cfgFrames').value = String(config.frames || 6)
   if (document.activeElement?.id !== 'cfgScanFolder') $('#cfgScanFolder').value = config.scanFolder || ''
+  $('#cfgScanDeep').checked = config.scanDeep === true
   const dataDirBox = $('#dataDirBox')
   if (dataDirBox && state.live?.dataDir) {
     dataDirBox.innerHTML = `<code style="word-break:break-all">${esc(state.live.dataDir)}</code>`
@@ -1187,6 +1188,7 @@ function bind() {
 
   $('#cfgFrames').onchange = (event) => patchConfig({ frames: Number(event.target.value) })
   $('#cfgScanFolder').onchange = (event) => patchConfig({ scanFolder: event.target.value.trim() })
+  $('#cfgScanDeep').onchange = (event) => patchConfig({ scanDeep: event.target.checked })
   $('#btnDataDir').onclick = async () => {
     const target = $('#dataDirInput').value.trim()
     if (!target) {
