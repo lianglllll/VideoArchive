@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>录像档案</title>
+    <link rel="icon" href="/video-archive/icon.svg" />
+    <link rel="stylesheet" href="/video-archive/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5.5v13l11-6.5z" fill="currentColor" /></svg>
+          </div>
+          <div class="brand-text">
+            <h1>录像档案</h1>
+            <p id="subtitle">正在加载…</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost icon-btn" id="btnRescan" hidden title="再扫一遍文件夹，收新录像" aria-label="扫一遍">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 11a8 8 0 1 0-2.3 6.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M20 4.5V11h-6.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button class="btn ghost icon-btn" id="btnPopout" hidden title="在独立窗口打开（边聊边看）" aria-label="在独立窗口打开">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M14 4h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M20 4l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M19 14v4.5A1.5 1.5 0 0 1 17.5 20h-12A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="jobs" id="jobs" hidden>
+        <div class="jobs-bar"><i id="jobsFill"></i></div>
+        <div class="jobs-text">
+          <span id="jobsLabel">准备中…</span>
+          <button class="link" id="btnCancel">停止</button>
+        </div>
+      </div>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-tab="library">待处理录像</button>
+        <button class="tab" data-tab="browse">游戏录像</button>
+        <button class="tab" data-tab="games">游戏库</button>
+        <button class="tab" data-tab="settings">设置</button>
+      </nav>
+
+      <section class="grid" id="grid"></section>
+      <section class="browse" id="browseView" hidden>
+        <div class="browse-head">
+          <div class="crumbs" id="crumbs"></div>
+          <div class="browse-tools">
+            <input id="browseSearch" class="browse-search" placeholder="搜标题 / 游戏 / 标签 / 文件名" autocomplete="off" />
+            <span class="browse-count" id="browseCount"></span>
+          </div>
+        </div>
+        <div id="browseBody"></div>
+      </section>
+      <section class="games-view" id="gamesView" hidden></section>
+      <section class="settings-page" id="settingsView" hidden>
+        <h2>设置</h2>
+
+        <section class="block">
+          <h3>显示</h3>
+          <label class="toggle"><span>每个视频抽几帧当关键帧</span>
+            <select id="cfgFrames" class="mini">
+              <option value="4">4 帧（快）</option>
+              <option value="6">6 帧（推荐）</option>
+              <option value="9">9 帧（细）</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="block">
+          <h3>打开时自动扫一次</h3>
+          <p class="hint">不常驻后台、不盯着文件夹。只有你打开这个页面时，才扫一遍这里填的文件夹，把还没进档案的视频收进来。</p>
+          <div class="row">
+            <input id="cfgScanFolder" class="grow" placeholder="例如 D:\GameVideo" />
+            <label class="toggle" style="margin:0"><input type="checkbox" id="cfgScanDeep" /><span>含子文件夹</span></label>
+          </div>
+          <label class="toggle" style="margin-top:6px"><input type="checkbox" id="cfgScanOnOpen" /><span>打开页面时自动扫一遍</span></label>
+          <button class="btn" id="btnScanNow" style="margin-top:8px">现在扫一次</button>
+          <button class="link" id="btnManualAdd" style="display:block;margin-top:10px">或者手动挑几个文件…</button>
+        </section>
+
+        <section class="block">
+          <h3>归档</h3>
+          <label class="toggle"><input type="checkbox" id="cfgMove" /><span>保存视频信息后，自动归档到指定文件夹</span></label>
+          <div class="row" style="margin:6px 0 8px">
+            <input id="cfgMoveTarget" class="grow" placeholder="例如 D:\GameVideo\已整理" />
+            <select id="cfgGroup" class="mini">
+              <option value="none">不分子文件夹</option>
+              <option value="game">按游戏分</option>
+              <option value="month">按月份分</option>
+            </select>
+          </div>
+          <p class="hint" style="margin:0">只在你点「保存修改」之后才移动；按游戏分时会等游戏设好再动。目标里重名自动加序号，移动失败原文件不动。</p>
+          <button class="btn" id="btnMoveAll" style="margin-top:10px">立刻整理已有视频</button>
+        </section>
+
+        <section class="block">
+          <h3>档案存哪</h3>
+          <div class="env" id="dataDirBox">读取中…</div>
+          <div class="row" style="margin-top:8px">
+            <input id="dataDirInput" class="grow" placeholder="改成别的目录，例如 D:\录像档案数据" />
+          </div>
+          <label class="toggle" style="margin-top:6px"><input type="checkbox" id="dataDirMigrate" checked /><span>把现有档案（记录 + 封面）复制过去</span></label>
+          <button class="btn" id="btnDataDir" style="margin-top:8px">切换目录</button>
+          <p class="hint" style="margin:8px 0 0">这里放的是标题/游戏/摘要这些记录和封面图；录像文件本身不会被移动。放到录像目录里，换机器时档案就跟着硬盘一起走。<br />换了机器第一次用：把这里指到硬盘里的 <code>.VideoArchive</code> 目录，<b>取消勾选「复制」</b>，直接切换即可。</p>
+        </section>
+
+        <section class="block">
+          <h3>换机器后的路径修正</h3>
+          <p class="hint">A 机器在 D 盘、B 机器盘符变成 E 盘时，档案里的视频路径会对不上。填旧前缀和新前缀，批量换掉。</p>
+          <div class="row">
+            <input id="remapFrom" class="grow" placeholder="旧路径前缀，例如 D:\GameVideo" />
+            <span class="sep">→</span>
+            <input id="remapTo" class="grow" placeholder="新路径前缀，例如 E:\GameVideo" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="btnRemapDry">试算</button>
+            <button class="btn primary" id="btnRemapApply">应用</button>
+            <span class="hint" id="remapTip" style="margin:0"></span>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>环境</h3>
+          <div class="env" id="envBox">检查中…</div>
+          <div class="row">
+            <button class="btn" id="btnCheckEnv">重新检测</button>
+            <a class="btn ghost" id="btnExportMd" href="/video-archive/api/export?format=md">导出 Markdown</a>
+            <a class="btn ghost" id="btnExportJson" href="/video-archive/api/export?format=json">导出 JSON</a>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>说明</h3>
+          <p class="hint">
+            所有记录（标题/游戏/摘要/标签）和封面都放在上面那个目录里，删掉它等于清空档案（视频文件本身不会动）。
+          </p>
+        </section>
+      </section>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+
+    <div class="modal" id="detail" hidden>
+      <div class="modal-backdrop" data-close="detail"></div>
+      <div class="detail">
+        <button class="close" data-close="detail" aria-label="关闭">✕</button>
+        <div class="player-col">
+          <div class="player-wrap">
+            <video id="player" controls playsinline preload="metadata"></video>
+            <div class="player-hint" id="playerHint" hidden></div>
+          </div>
+          <div class="frames" id="frames"></div>
+        </div>
+        <aside class="info-col">
+          <div class="kicker" id="dKicker"></div>
+          <input id="dTitle" class="title-input" placeholder="给这段录像起个标题" />
+          <div class="facts" id="dFacts"></div>
+          <div class="field">
+            <span>游戏名</span>
+            <select id="dGame" class="game-select"></select>
+          </div>
+          <label class="field">
+            <span>摘要</span>
+            <textarea id="dSummary" rows="5" placeholder="这段录像里发生了什么"></textarea>
+          </label>
+          <label class="field">
+            <span>标签</span>
+            <input id="dTags" placeholder="用逗号隔开，例如：开放世界, 翻车, 速通" />
+          </label>
+          <div class="info-actions">
+            <button class="btn primary" id="dSave">保存修改</button>
+            <button class="btn ghost icon-btn" id="dRefresh" title="重新读取时长、分辨率和封面" aria-label="重新读取">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 11a8 8 0 1 0-2.3 6.3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+                <path d="M20 4.5V11h-6.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button class="btn ghost icon-btn" id="dReveal" title="在资源管理器里打开" aria-label="打开文件夹">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3.6 7.4A1.9 1.9 0 0 1 5.5 5.5h3.2l1.7 2.1h6.9a1.9 1.9 0 0 1 1.9 1.9v6.9a1.9 1.9 0 0 1-1.9 1.9H5.5a1.9 1.9 0 0 1-1.9-1.9z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <path d="M3.9 9.6h16.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button class="btn ghost icon-btn danger" id="dDelete" title="删除这条" aria-label="删除">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4.5 7h15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M9.5 7V5.4A1.4 1.4 0 0 1 10.9 4h2.2a1.4 1.4 0 0 1 1.4 1.4V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M6.6 7l.8 11.6A1.9 1.9 0 0 0 9.3 20.4h5.4a1.9 1.9 0 0 0 1.9-1.8L17.4 7" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <path d="M10.4 10.6v6M13.6 10.6v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="modal" id="addModal" hidden>
+      <div class="modal-backdrop" data-close="addModal"></div>
+      <div class="game-edit add-panel">
+        <button class="close" data-close="addModal" aria-label="关闭">✕</button>
+        <h2>添加视频</h2>
+        <p class="hint">填一个文件夹，把里面的视频列出来，勾上要加的那些。只加你勾的，不会自己去收别的文件。</p>
+        <div class="row">
+          <input id="addFolder" class="grow" placeholder="例如 D:\GameVideo\2026-11-14" />
+          <button class="btn" id="btnListFiles">列出视频</button>
+        </div>
+        <div class="add-list" id="addList"></div>
+        <div class="row add-foot" id="addFoot" hidden>
+          <button class="link" id="btnSelectAll">全选</button>
+          <button class="link" id="btnSelectNone">全不选</button>
+          <span class="spacer"></span>
+          <button class="btn primary" id="btnAddSelected">加入档案</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="gameModal" hidden>
+      <div class="modal-backdrop" data-close="gameModal"></div>
+      <div class="game-edit">
+        <button class="close" data-close="gameModal" aria-label="关闭">✕</button>
+        <h2>编辑游戏</h2>
+        <label class="field">
+          <span>游戏名</span>
+          <input id="gName" placeholder="例如 艾尔登法环" />
+        </label>
+        <label class="field">
+          <span>类别</span>
+          <select id="gCategory" class="mini wide"></select>
+        </label>
+        <label class="field">
+          <span>别名（逗号隔开；AI 叫错的名字会自动并到这个游戏）</span>
+          <input id="gAliases" placeholder="例如 ELDEN RING, 老头环" />
+        </label>
+        <div class="field">
+          <span>合并到别的游戏</span>
+          <div class="row">
+            <select id="gMerge" class="mini wide"></select>
+            <button class="btn" id="gMergeBtn">合并</button>
+          </div>
+        </div>
+        <div class="info-actions">
+          <button class="btn primary" id="gSave">保存</button>
+          <button class="btn ghost" id="gDelete">删除</button>
+        </div>
+        <div class="tip" id="gTip"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="catModal" hidden>
+      <div class="modal-backdrop" data-close="catModal"></div>
+      <div class="game-edit">
+        <button class="close" data-close="catModal" aria-label="关闭">✕</button>
+        <h2>管理类别</h2>
+        <p class="hint">类别只是给你自己分类用的，可以随时改名或删掉（删掉后游戏会回到「未分类」）。</p>
+        <div class="cat-list" id="catList"></div>
+        <div class="row">
+          <input id="newCategory" class="grow" placeholder="新类别名，例如 魂类 / 生存" />
+          <button class="btn" id="btnAddCategory">添加</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="deleteModal" hidden>
+      <div class="modal-backdrop" data-close="deleteModal"></div>
+      <div class="game-edit confirm">
+        <button class="close" data-close="deleteModal" aria-label="关闭">✕</button>
+        <h2>删除这条视频？</h2>
+        <p class="hint" id="delName"></p>
+        <div class="info-actions" style="justify-content: flex-start; flex-wrap: wrap">
+          <button class="btn primary" id="delRecordOnly">只从档案移除</button>
+          <button class="btn danger" id="delWithFile">连文件一起删</button>
+          <button class="btn ghost" data-close="deleteModal">取消</button>
+        </div>
+        <div class="tip">「只从档案移除」不会动硬盘上的文件；「连文件一起删」会把它放进回收站，还能找回来。</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+    <script src="/video-archive/app.js"></script>
+  </body>
+</html>

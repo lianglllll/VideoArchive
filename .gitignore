@@ -1,0 +1,20 @@
+# 依赖
+node_modules/
+
+# 开发时用的临时数据、截图、日志
+dev/*.png
+dev/*.jpg
+dev/.data/
+dev/datadir-test/
+dev/videos/
+
+# 系统/编辑器杂物
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.log
+
+# 安装脚本写的备份
+*.bak-video-archive-*

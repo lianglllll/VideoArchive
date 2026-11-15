@@ -1,0 +1,50 @@
+{
+  "name": "@local/video-archive",
+  "version": "0.1.0",
+  "private": true,
+  "description": "录像档案：把游戏录像整理成一个能搜能看的本地档案库，纯本地、不需要任何模型。DSH 插件。",
+  "license": "MIT",
+  "author": "lianglllll",
+  "keywords": [
+    "dsh-plugin",
+    "dsh",
+    "video",
+    "gameplay",
+    "archive",
+    "ffmpeg"
+  ],
+  "type": "module",
+  "main": "./index.js",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./icon": "./icon.svg"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-general"
+      ]
+    }
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "web",
+    "icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "install.mjs",
+    "install.cmd",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
+}

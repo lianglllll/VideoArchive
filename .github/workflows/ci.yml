@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 语法检查
+        run: |
+          node --check index.js
+          node --check client.js
+          for f in lib/*.js web/*.js dev/*.js; do
+            node --check "$f"
+          done
+
+      - name: 插件能加载（假 ctx 跑一遍 apply）
+        run: node dev/apply-test.js

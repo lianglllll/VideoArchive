@@ -1,0 +1,4 @@
+- insert:
+    - id: video-archive
+      name: '@local/video-archive'
+      config: {}
