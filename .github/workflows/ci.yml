@@ -28,3 +28,6 @@ jobs:
 
       - name: 断盘保护（只读 / 不覆盖 / 恢复）
         run: node dev/test-storage-guard.mjs
+
+      - name: 换文件夹不搬数据
+        run: node dev/test-switch-folder.mjs

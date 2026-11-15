@@ -27,7 +27,7 @@ export function apply(ctx) {
   if (!store.explicit) {
     const derived = dataDirForScan(store.getConfig().scanFolder)
     if (derived && path.resolve(derived) !== store.dataDir) {
-      const moved = store.relocate(derived, { migrate: true, explicit: false })
+      const moved = store.relocate(derived, { migrate: false, explicit: false })
       if (!moved.ok) logger.warn?.(`档案目录没切过去：${moved.error}`)
     }
   }
