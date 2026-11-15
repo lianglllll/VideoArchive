@@ -901,11 +901,6 @@ async function saveDetail() {
 /* ------------------------------------------------------------------ 设置 */
 function renderSettings() {
   const config = state.live?.config || {}
-  $('#cfgMove').checked = config.moveEnabled === true
-  if (document.activeElement?.id !== 'cfgMoveTarget') $('#cfgMoveTarget').value = config.moveTarget ?? ''
-  $('#cfgGroup').value = config.moveGroupBy || 'game'
-  $('#cfgGroup').disabled = config.moveEnabled !== true
-  $('#cfgMoveTarget').disabled = config.moveEnabled !== true
   $('#cfgFrames').value = String(config.frames || 6)
   if (document.activeElement?.id !== 'cfgScanFolder') $('#cfgScanFolder').value = config.scanFolder || ''
   $('#cfgScanDeep').checked = config.scanDeep === true
@@ -1163,23 +1158,6 @@ function bind() {
   $('#cfgFrames').onchange = (event) => patchConfig({ frames: Number(event.target.value) })
   $('#cfgScanFolder').onchange = (event) => patchConfig({ scanFolder: event.target.value.trim() })
   $('#cfgScanDeep').onchange = (event) => patchConfig({ scanDeep: event.target.checked })
-  $('#cfgMove').onchange = (event) => patchConfig({ moveEnabled: event.target.checked })
-  $('#cfgMoveTarget').onchange = (event) => patchConfig({ moveTarget: event.target.value.trim() })
-  $('#cfgGroup').onchange = (event) => patchConfig({ moveGroupBy: event.target.value })
-  $('#btnMoveAll').onclick = async () => {
-    if (!window.confirm('把库里还没归档的视频移动到目标文件夹？会改原文件路径。')) return
-    $('#btnMoveAll').disabled = true
-    try {
-      const result = await api('/move', { method: 'POST', body: { all: true } })
-      const failed = result.failed?.length ? `，${result.failed.length} 个失败` : ''
-      toast(`整理了 ${result.moved} 个视频${failed}`)
-      await load({ silent: true })
-    } catch (error) {
-      toast(error.message, 'err')
-    } finally {
-      $('#btnMoveAll').disabled = false
-    }
-  }
 
   $('#btnCheckEnv').onclick = async () => {
     $('#btnCheckEnv').disabled = true
