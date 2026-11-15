@@ -1,5 +1,6 @@
 // 录像档案 · DSH 插件
 // 自己挑视频加进来，读时长/抽封面，手工填标题游戏摘要，按需归档到指定文件夹。
+import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { Store, resolveDataDir, defaultLocationFile, dataDirForScan } from './lib/store.js'
@@ -25,8 +26,10 @@ export function apply(ctx) {
   // 档案默认跟着录像文件夹走：<录像文件夹>/.VideoArchive。
   // 只有指针里明确指定过（explicit）才不动它。
   if (!store.explicit) {
-    const derived = dataDirForScan(store.getConfig().scanFolder)
-    if (derived && path.resolve(derived) !== store.dataDir) {
+    const scanFolder = String(store.getConfig().scanFolder || '')
+    const derived = dataDirForScan(scanFolder)
+    // 录像文件夹被改名/挪走时不要 relocate，否则会把空文件夹给你建回来
+    if (derived && path.resolve(derived) !== store.dataDir && scanFolder && fs.existsSync(scanFolder)) {
       const moved = store.relocate(derived, { migrate: false, explicit: false })
       if (!moved.ok) logger.warn?.(`档案目录没切过去：${moved.error}`)
     }

@@ -217,9 +217,13 @@ function renderBanner() {
   if (!broken) return
   const dir = storage?.dataDir || ''
   const reason = String(storage.error || '')
-  $('#bannerText').textContent = /ENOENT|no such file|can't create|ENOTDIR/i.test(reason)
-    ? `找不到档案目录：${dir}`
-    : `档案目录读不了：${dir}`
+  if (storage.missingScanFolder) {
+    $('#bannerText').textContent = `找不到录像文件夹：${storage.scanFolder || dir}`
+  } else if (/ENOENT|no such file|can't create|ENOTDIR/i.test(reason)) {
+    $('#bannerText').textContent = `找不到档案目录：${dir}`
+  } else {
+    $('#bannerText').textContent = `档案目录读不了：${dir}`
+  }
 }
 
 async function retryStorage() {

@@ -40,6 +40,15 @@ check('reload 读回条数', reloaded.videos, 1)
 check('reload 后恢复可写', s2.canWrite(), true)
 check('reload 后写入成功', s2.writeSafe(path.join(root, 'x.json'), { a: 1 }), true)
 
+// ④ 录像文件夹被改名/挪走：不能在原地建一个空文件夹
+const gone = path.join(os.tmpdir(), `va-gone-${Date.now()}`)
+const goneDataDir = path.join(gone, '.VideoArchive')
+const s4 = new Store({ dataDir: goneDataDir, logger: log })
+const st4 = s4.status()
+check('文件夹不在 → 只读', st4.readOnly, true)
+check('文件夹不在 → 标记 missingScanFolder', st4.missingScanFolder, true)
+check('文件夹不在 → 没有被重建出来', fs.existsSync(gone), false)
+
 fs.rmSync(root, { recursive: true, force: true })
 console.log(fail ? `\n✗ ${fail} 项不符合预期` : '\n✓ 全部符合预期')
 process.exit(fail ? 1 : 0)

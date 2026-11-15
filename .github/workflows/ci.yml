@@ -31,3 +31,6 @@ jobs:
 
       - name: 换文件夹不搬数据
         run: node dev/test-switch-folder.mjs
+
+      - name: 文件夹改名后按同名同大小认回
+        run: node dev/test-relink.mjs
