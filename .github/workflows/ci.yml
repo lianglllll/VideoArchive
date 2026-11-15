@@ -32,3 +32,5 @@ jobs:
       - name: 换文件夹不搬数据
         run: node dev/test-switch-folder.mjs
 
+      - name: 游戏封面可以指定
+        run: node dev/test-game-cover.mjs

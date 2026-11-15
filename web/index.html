@@ -184,6 +184,16 @@
           <input id="gAliases" placeholder="例如 ELDEN RING, 老头环" />
         </label>
         <div class="field">
+          <span>封面（默认取这个游戏第一条有封面的视频）</span>
+          <div class="row">
+            <div class="game-cover" id="gCover"><div class="placeholder">默认</div></div>
+            <button class="btn" id="gCoverPick">从视频里选…</button>
+            <button class="btn ghost" id="gCoverAuto">用默认</button>
+          </div>
+          <div class="cover-strip" id="gCoverStrip" hidden></div>
+        </div>
+
+        <div class="field">
           <span>合并到别的游戏</span>
           <div class="row">
             <select id="gMerge" class="mini wide"></select>

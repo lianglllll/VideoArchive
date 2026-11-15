@@ -825,6 +825,7 @@ function openGameModal(id) {
   $('#gMerge').disabled = !id
   $('#gMergeBtn').disabled = !id
   $('#gDelete').style.display = id ? '' : 'none'
+  initGameCover(game)
   $('#gTip').textContent = game
     ? `${game.count} 个视频 · ${clock(game.seconds || 0)} · 最近 ${dateText(game.lastAt)}`
     : '新建一个游戏，之后填视频信息时可以直接选它。'
@@ -839,12 +840,88 @@ function closeGameModal() {
   document.body.style.overflow = ''
 }
 
+/* ------------------------------------------------------------------ 游戏封面 */
+function gameVideosFor(gameName) {
+  const key = String(gameName || '')
+  if (!key) return []
+  return (state.videos || []).filter((item) => String(item.user?.game || '') === key && item.cover)
+}
+
+function paintGameCover(url, label) {
+  const box = $('#gCover')
+  if (!box) return
+  box.innerHTML = url
+    ? `<img src="${esc(url)}" alt="" />`
+    : `<div class="placeholder">${esc(label || '默认')}</div>`
+}
+
+function initGameCover(game) {
+  state.editingGameCover = game?.coverId || ''
+  const strip = $('#gCoverStrip')
+  if (strip) {
+    strip.hidden = true
+    strip.innerHTML = ''
+  }
+  if (!game) {
+    paintGameCover('', '默认')
+    const pick = $('#gCoverPick')
+    if (pick) pick.disabled = true
+    const auto = $('#gCoverAuto')
+    if (auto) auto.disabled = true
+    return
+  }
+  const pick = $('#gCoverPick')
+  if (pick) pick.disabled = false
+  const auto = $('#gCoverAuto')
+  if (auto) auto.disabled = false
+
+  const chosen = game.cover ? (state.videos || []).find((item) => item.id === game.cover) : null
+  paintGameCover(chosen?.cover || game.cover || '', chosen ? '' : '默认')
+}
+
+function toggleCoverStripOff() {
+  const strip = $('#gCoverStrip')
+  if (strip) {
+    strip.hidden = true
+    strip.innerHTML = ''
+  }
+}
+function toggleCoverStrip() {
+  const strip = $('#gCoverStrip')
+  if (!strip) return
+  if (!strip.hidden) {
+    strip.hidden = true
+    return
+  }
+  const game = (state.games || []).find((item) => item.id === state.editingGame)
+  const list = gameVideosFor(game?.name)
+  if (!list.length) {
+    toast('这个游戏下面还没有带封面的视频', 'err')
+    return
+  }
+  strip.innerHTML = list
+    .map(
+      (item) =>
+        `<button type="button" data-cover-id="${esc(item.id)}" class="${item.id === state.editingGameCover ? 'on' : ''}" title="${esc(item.name)}"><img src="${esc(item.cover)}" alt="" /></button>`,
+    )
+    .join('')
+  strip.hidden = false
+  strip.querySelectorAll('button').forEach((node) => {
+    node.onclick = () => {
+      state.editingGameCover = node.dataset.coverId || ''
+      const picked = list.find((item) => item.id === state.editingGameCover)
+      paintGameCover(picked?.cover || '', '')
+      strip.querySelectorAll('button').forEach((other) => other.classList.toggle('on', other === node))
+    }
+  })
+}
 async function saveGame() {
   const id = state.editingGame
   const payload = {
     name: $('#gName').value.trim(),
     category: $('#gCategory').value,
     aliases: $('#gAliases').value,
+    cover: state.editingGameCover || '',
   }
   if (!payload.name) {
     toast('游戏名不能为空', 'err')
@@ -1268,6 +1345,8 @@ function bind() {
   })
 
   $('#gSave').onclick = () => saveGame()
+  $('#gCoverPick').onclick = () => toggleCoverStrip()
+  $('#gCoverAuto').onclick = () => { state.editingGameCover = ''; toggleCoverStripOff(); const g = (state.games || []).find((item) => item.id === state.editingGame); paintGameCover(g?.cover || '', '默认') }
   $('#gMergeBtn').onclick = () => mergeGame()
   $('#gDelete').onclick = () => deleteGame()
   ;['#gName', '#gAliases'].forEach((selector) => {
