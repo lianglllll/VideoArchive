@@ -980,7 +980,23 @@ function autoScanOnOpen() {
   const config = state.live?.config || {}
   if (!config.scanOnOpen || !config.scanFolder) return
   autoScanDone = true
-  runScanFolder(false)
+  // 一分钟内扫过就不再扫：来回切页签时不反复读盘
+  let last = 0
+  try {
+    last = Number(sessionStorage.getItem('va:lastScan') || 0)
+  } catch {
+    last = 0
+  }
+  if (Date.now() - last < 60_000) return
+  try {
+    sessionStorage.setItem('va:lastScan', String(Date.now()))
+  } catch {
+    /* ignore */
+  }
+  // 先让页面画完再说，别和首屏抢
+  setTimeout(() => {
+    if (!document.hidden) runScanFolder(false)
+  }, 800)
 }
 
 async function remapPaths(dryRun) {  const from = $('#remapFrom').value.trim()
@@ -1415,7 +1431,10 @@ function applyHash() {
 }
 
 window.addEventListener('hashchange', applyHash)
+
+// 每 15 秒瞄一眼后台状态；页面被藏起来（切去聊天）时完全不干活，避免抢主线程
 setInterval(() => {
+  if (document.hidden) return
   if (!state.polling) {
     api('/state')
       .then((live) => {
@@ -1424,4 +1443,29 @@ setInterval(() => {
       })
       .catch(() => {})
   }
-}, 8000)
+}, 15000)
+
+// 切走的时候把播放器松开（释放解码器和连接），切回来再按需接上，减少来回切换的卡顿
+function releasePlayer() {
+  const player = $('#player')
+  if (!player) return
+  if (!player.paused) player.pause()
+  if (player.src) {
+    player.removeAttribute('src')
+    player.load()
+  }
+}
+
+function restorePlayer() {
+  if (!state.selected) return
+  const player = $('#player')
+  if (!player || player.src || $('#detail').hidden) return
+  player.src = `/video-archive/api/video?id=${encodeURIComponent(state.selected)}`
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) releasePlayer()
+  else restorePlayer()
+})
+
+window.addEventListener('pagehide', releasePlayer)
