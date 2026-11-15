@@ -2,7 +2,7 @@
 // 自己挑视频加进来，读时长/抽封面，手工填标题游戏摘要，按需归档到指定文件夹。
 import os from 'node:os'
 import path from 'node:path'
-import { Store, resolveDataDir, defaultLocationFile } from './lib/store.js'
+import { Store, resolveDataDir, defaultLocationFile, dataDirForScan } from './lib/store.js'
 import { Ffmpeg } from './lib/ffmpeg.js'
 import { GameBook } from './lib/games.js'
 import { Archive } from './lib/archive.js'
@@ -21,6 +21,18 @@ export function apply(ctx) {
   const locationFile = devDir ? path.join(path.dirname(dataDir), 'VideoArchive.location.json') : defaultLocationFile()
 
   const store = new Store({ dataDir, locationFile, logger })
+
+  // 档案默认跟着录像文件夹走：<录像文件夹>/.VideoArchive。
+  // 只有指针里明确指定过（explicit）才不动它。
+  if (!store.explicit) {
+    const derived = dataDirForScan(store.getConfig().scanFolder)
+    if (derived && path.resolve(derived) !== store.dataDir) {
+      const moved = store.relocate(derived, { migrate: true, explicit: false })
+      if (!moved.ok) logger.warn?.(`档案目录没切过去：${moved.error}`)
+    }
+  }
+  store.saveLocation()
+
   const ffmpeg = new Ffmpeg({ configPath: store.getConfig().ffmpegPath, logger })
   const games = new GameBook({ dataDir: store.dataDir, logger })
   const archive = new Archive({ store, ffmpeg, games, logger })

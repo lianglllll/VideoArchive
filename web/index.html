@@ -102,32 +102,6 @@
         </section>
 
         <section class="block">
-          <h3>档案存哪</h3>
-          <div class="env" id="dataDirBox">读取中…</div>
-          <div class="row" style="margin-top:8px">
-            <input id="dataDirInput" class="grow" placeholder="改成别的目录，例如 D:\录像档案数据" />
-          </div>
-          <label class="toggle" style="margin-top:6px"><input type="checkbox" id="dataDirMigrate" checked /><span>把现有档案（记录 + 封面）复制过去</span></label>
-          <button class="btn" id="btnDataDir" style="margin-top:8px">切换目录</button>
-          <p class="hint" style="margin:8px 0 0">这里放的是标题/游戏/摘要这些记录和封面图；录像文件本身不会被移动。放到录像目录里，换机器时档案就跟着硬盘一起走。<br />换了机器第一次用：把这里指到硬盘里的 <code>.VideoArchive</code> 目录，<b>取消勾选「复制」</b>，直接切换即可。</p>
-        </section>
-
-        <section class="block">
-          <h3>换机器后的路径修正</h3>
-          <p class="hint">A 机器在 D 盘、B 机器盘符变成 E 盘时，档案里的视频路径会对不上。填旧前缀和新前缀，批量换掉。</p>
-          <div class="row">
-            <input id="remapFrom" class="grow" placeholder="旧路径前缀，例如 D:\GameVideo" />
-            <span class="sep">→</span>
-            <input id="remapTo" class="grow" placeholder="新路径前缀，例如 E:\GameVideo" />
-          </div>
-          <div class="row" style="margin-top:8px">
-            <button class="btn" id="btnRemapDry">试算</button>
-            <button class="btn primary" id="btnRemapApply">应用</button>
-            <span class="hint" id="remapTip" style="margin:0"></span>
-          </div>
-        </section>
-
-        <section class="block">
           <h3>环境</h3>
           <div class="env" id="envBox">检查中…</div>
           <div class="row">

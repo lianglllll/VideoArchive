@@ -1,6 +1,6 @@
 {
   "name": "@local/video-archive",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "录像档案：把游戏录像整理成一个能搜能看的本地档案库，纯本地、不需要任何模型。DSH 插件。",
   "license": "MIT",

@@ -909,10 +909,6 @@ function renderSettings() {
   $('#cfgFrames').value = String(config.frames || 6)
   if (document.activeElement?.id !== 'cfgScanFolder') $('#cfgScanFolder').value = config.scanFolder || ''
   $('#cfgScanDeep').checked = config.scanDeep === true
-  const dataDirBox = $('#dataDirBox')
-  if (dataDirBox && state.live?.dataDir) {
-    dataDirBox.innerHTML = `<code style="word-break:break-all">${esc(state.live.dataDir)}</code>`
-  }
   renderDeps()
 }
 
@@ -1001,28 +997,6 @@ function autoScanOnOpen() {
   setTimeout(() => {
     if (!document.hidden) runScanFolder(false)
   }, 800)
-}
-
-async function remapPaths(dryRun) {  const from = $('#remapFrom').value.trim()
-  const to = $('#remapTo').value.trim()
-  if (!from || !to) {
-    toast('旧前缀和新前缀都要填', 'err')
-    return
-  }
-  try {
-    const result = await api('/remap', { method: 'POST', body: { from, to, dryRun } })
-    const samples = result.samples || []
-    const hits = samples.filter((item) => item.exists).length
-    if (dryRun) {
-      $('#remapTip').textContent = `会改 ${result.changed} 条${samples.length ? `，抽查 ${samples.length} 条里 ${hits} 条新路径存在` : ''}`
-    } else {
-      $('#remapTip').textContent = `已改 ${result.changed} 条`
-      toast(`已修正 ${result.changed} 条路径`)
-      await load({ silent: true })
-    }
-  } catch (error) {
-    toast(error.message, 'err')
-  }
 }
 
 /* ------------------------------------------------------------------ 轮询 */
@@ -1189,26 +1163,6 @@ function bind() {
   $('#cfgFrames').onchange = (event) => patchConfig({ frames: Number(event.target.value) })
   $('#cfgScanFolder').onchange = (event) => patchConfig({ scanFolder: event.target.value.trim() })
   $('#cfgScanDeep').onchange = (event) => patchConfig({ scanDeep: event.target.checked })
-  $('#btnDataDir').onclick = async () => {
-    const target = $('#dataDirInput').value.trim()
-    if (!target) {
-      toast('先填一个新的目录', 'err')
-      return
-    }
-    const migrate = $('#dataDirMigrate').checked
-    if (!window.confirm(`把档案目录切到 ${target}？${migrate ? '现有记录和封面会复制过去。' : '新目录是空的，旧档案不会带过去。'}`)) return
-    $('#btnDataDir').disabled = true
-    try {
-      const result = await api('/data-dir', { method: 'POST', body: { path: target, migrate } })
-      toast(result.unchanged ? '已经在用这个目录了' : `已切换，复制了 ${result.copied || 0} 个文件`)
-      $('#dataDirInput').value = ''
-      await load({ silent: true })
-    } catch (error) {
-      toast(error.message, 'err')
-    } finally {
-      $('#btnDataDir').disabled = false
-    }
-  }
   $('#cfgMove').onchange = (event) => patchConfig({ moveEnabled: event.target.checked })
   $('#cfgMoveTarget').onchange = (event) => patchConfig({ moveTarget: event.target.value.trim() })
   $('#cfgGroup').onchange = (event) => patchConfig({ moveGroupBy: event.target.value })
@@ -1226,8 +1180,6 @@ function bind() {
       $('#btnMoveAll').disabled = false
     }
   }
-  $('#btnRemapDry').onclick = () => remapPaths(true)
-  $('#btnRemapApply').onclick = () => remapPaths(false)
 
   $('#btnCheckEnv').onclick = async () => {
     $('#btnCheckEnv').disabled = true
