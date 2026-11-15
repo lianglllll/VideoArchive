@@ -155,6 +155,62 @@ async function removeVideo(withFile) {
   }
 }
 
+/* ------------------------------------------------------------------ 首次引导 */
+function openSetupModal() {
+  const config = state.live?.config || {}
+  $('#setupFolder').value = config.scanFolder || ''
+  $('#setupModal').hidden = false
+  setTimeout(() => $('#setupFolder').focus(), 50)
+}
+
+function closeSetupModal() {
+  $('#setupModal').hidden = true
+}
+
+function maybeShowSetup() {
+  const config = state.live?.config || {}
+  if (config.scanFolder) return
+  if (state.videos.length) return
+  try {
+    if (sessionStorage.getItem('va:setupSkipped') === '1') return
+  } catch {
+    /* ignore */
+  }
+  openSetupModal()
+}
+
+async function pickFolderNative() {
+  const button = $('#setupBrowse')
+  const label = button.textContent
+  button.disabled = true
+  button.textContent = '等选择…'
+  try {
+    const result = await api('/pick-folder', { method: 'POST', body: {} })
+    if (result.path) $('#setupFolder').value = result.path
+  } catch (error) {
+    toast(error.message, 'err')
+  } finally {
+    button.disabled = false
+    button.textContent = label
+  }
+}
+
+async function saveSetup() {
+  const folder = $('#setupFolder').value.trim()
+  if (!folder) {
+    toast('先填一个文件夹路径，或者点「选择文件夹…」', 'err')
+    return
+  }
+  try {
+    await patchConfig({ scanFolder: folder })
+    closeSetupModal()
+    toast('好了，正在扫里面的视频…')
+    runScanFolder(false)
+  } catch (error) {
+    toast(error.message, 'err')
+  }
+}
+
 /* ------------------------------------------------------------------ 渲染 */
 function render() {
   const tab = state.tab
@@ -1141,6 +1197,12 @@ function bind() {
   })
 
   $('#btnRescan').onclick = () => runScanFolder(true)
+  $('#setupBrowse').onclick = () => pickFolderNative()
+  $('#setupSave').onclick = () => saveSetup()
+  $('#setupSkip').onclick = () => {
+    try { sessionStorage.setItem('va:setupSkipped', '1') } catch {}
+    closeSetupModal()
+  }
 
   // 被嵌在 DSH 侧栏里时，给一个「弹成独立窗口」的出口：边聊边看
   if (window.self !== window.top) {
@@ -1208,6 +1270,7 @@ load().then(() => {
     render()
   }
   applyHash()
+  maybeShowSetup()
   autoScanOnOpen()
 })
 

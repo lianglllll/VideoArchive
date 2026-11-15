@@ -221,6 +221,22 @@
       </div>
     </div>
 
+    <div class="modal" id="setupModal" hidden>
+      <div class="modal-backdrop"></div>
+      <div class="game-edit confirm">
+        <h2>先选一个录像文件夹</h2>
+        <p class="hint">插件会把这里新录的视频收进来。只读，不会移动或改名你的文件。</p>
+        <div class="row">
+          <input id="setupFolder" class="grow" placeholder="例如 D:\GameVideo" />
+          <button class="btn" id="setupBrowse">选择文件夹…</button>
+        </div>
+        <div class="info-actions" style="justify-content: flex-start; flex-wrap: wrap; margin-top: 14px">
+          <button class="btn primary" id="setupSave">开始使用</button>
+          <button class="btn ghost" id="setupSkip">以后再说</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" id="toast" hidden></div>
     <script src="/video-archive/app.js"></script>
   </body>
