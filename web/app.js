@@ -307,6 +307,28 @@ async function saveSetup() {
 /* ------------------------------------------------------------------ 渲染 */
 function render() {
   const tab = state.tab
+  const storage = state.live?.storage
+  const unavailable = storage && storage.ok === false
+
+  // 档案目录不可用时，除了设置页，其他页签一律不显示内容——读不到就别摆出一副还有数据的样子
+  if (unavailable && tab !== 'settings') {
+    $('#grid').hidden = true
+    $('#browseView').hidden = true
+    $('#gamesView').hidden = true
+    $('#settingsView').hidden = true
+    const empty = $('#empty')
+    empty.hidden = false
+    empty.innerHTML = `<h2>档案目录不可用</h2>
+      <p>${esc(storage.error || '读不到档案目录')}<br />外接盘接回来、或者文件夹改回来之后，点下面重试。</p>
+      <div class="row"><button class="btn primary" id="emptyRetry">重试</button></div>`
+    document.querySelector('#emptyRetry').onclick = () => retryStorage()
+    document.querySelectorAll('#tabs .tab').forEach((node) => {
+      node.classList.toggle('active', node.dataset.tab === state.tab)
+    })
+    $('#subtitle').textContent = '档案目录不可用'
+    return
+  }
+
   $('#grid').hidden = tab !== 'library'
   $('#browseView').hidden = tab !== 'browse'
   $('#gamesView').hidden = tab !== 'games'
@@ -340,6 +362,20 @@ function render() {
   // 设了扫描文件夹才显示「再扫一遍」
   const rescan = $('#btnRescan')
   if (rescan) rescan.hidden = !state.live?.config?.scanFolder
+
+  // 封面读不到（缩略图丢了/盘没接）时别留个破图标
+  document.querySelectorAll('#grid img, #browseView img, #gamesView img').forEach((img) => {
+    img.onerror = () => {
+      const box = img.parentElement
+      img.remove()
+      if (box && !box.querySelector('.placeholder, .no-cover')) {
+        const placeholder = document.createElement('div')
+        placeholder.className = 'placeholder'
+        placeholder.textContent = '封面读不到'
+        box.prepend(placeholder)
+      }
+    }
+  })
 }
 
 function renderJobs() {
