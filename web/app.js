@@ -1,4 +1,6 @@
 const API = '/video-archive/api'
+// 后端 lib/http.js 里的 API_VERSION 必须和这个一致；不一致说明前端是新的、后端还是旧的
+const REQUIRED_API = 2
 const $ = (selector) => document.querySelector(selector)
 
 const state = {
@@ -27,6 +29,14 @@ function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch])
 }
 
+/** 把「后端还是旧版本」这类错误翻译成人话 */
+function friendlyError(error) {
+  const message = String(error?.message || error || '')
+  if (/新版本|未知接口|stale|404/i.test(message)) {
+    return '插件刚更新过，先重启一次 DSH，再点一次就能弹出文件夹选择框'
+  }
+  return message
+}
 function clock(seconds) {
   // 跟播放器一致用「向下取整」，避免 3.7 秒显示成 0:04、播放器却是 0:03
   const total = Math.max(0, Math.floor(Number(seconds) || 0))
@@ -174,7 +184,7 @@ async function pickScanFolder() {
       runScanFolder(false)
     }
   } catch (error) {
-    toast(error.message, 'err')
+    toast(friendlyError(error), 'err')
   } finally {
     pickingFolder = false
     if (button) {
@@ -188,8 +198,20 @@ async function pickScanFolder() {
 function renderBanner() {
   const banner = $('#banner')
   if (!banner) return
-  const storage = state.live?.storage
+  const live = state.live || {}
+  const storage = live.storage
+  const retry = $('#btnRetryStorage')
+
+  // 前端（每次从磁盘读）比后端（启动时加载）新：直接提示重启，别等用户点到某个按钮才炸
+  if (live.api !== REQUIRED_API) {
+    banner.hidden = false
+    if (retry) retry.hidden = true
+    $('#bannerText').textContent = '插件已更新，请重启 DSH'
+    return
+  }
+
   const broken = storage && storage.ok === false
+  if (retry) retry.hidden = false
   banner.hidden = !broken
   if (!broken) return
   const dir = storage?.dataDir || ''
@@ -237,7 +259,8 @@ function maybeShowSetup() {
   openSetupModal()
 }
 
-async function pickFolderNative() {  const button = $('#setupBrowse')
+async function pickFolderNative() {
+  const button = $('#setupBrowse')
   const label = button.textContent
   button.disabled = true
   button.textContent = '等选择…'
@@ -245,7 +268,7 @@ async function pickFolderNative() {  const button = $('#setupBrowse')
     const result = await api('/pick-folder', { method: 'POST', body: {} })
     if (result.path) $('#setupFolder').value = result.path
   } catch (error) {
-    toast(error.message, 'err')
+    toast(friendlyError(error), 'err')
   } finally {
     button.disabled = false
     button.textContent = label
