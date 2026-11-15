@@ -16,8 +16,6 @@ const state = {
   gameQuery: '',
   gameCategory: '',
   editingGame: '',
-  addFolder: '',
-  addFiles: [],
   browse: { game: '', year: '', month: '', day: '' },
   browseQuery: '',
   deps: null,
@@ -268,11 +266,18 @@ function renderGrid() {
   if (!state.videos.length) {
     grid.innerHTML = ''
     empty.hidden = false
+    const hasFolder = Boolean(state.live?.config?.scanFolder)
     empty.innerHTML = `<h2>还没有视频</h2>
-      <p>点右上角「添加视频」，填一个文件夹路径，把里面的视频列出来，勾上要加的那些。<br />之后剪辑、发视频、找素材都从这里开始。</p>
-      <div class="row"><button class="btn primary" id="emptyAdd">添加视频</button></div>`
-    const button = document.querySelector('#emptyAdd')
-    if (button) button.onclick = () => openAddModal()
+      <p>${
+        hasFolder
+          ? '把录像放进设置里那个文件夹，然后重新打开这个页面就会自动收进来。'
+          : '先去「设置」里填一个录像文件夹，之后打开这个页面就会把里面的视频自动收进来。'
+      }</p>
+      <div class="row"><button class="btn primary" id="emptySettings">${hasFolder ? '去设置看看' : '去设置填文件夹'}</button></div>`
+    document.querySelector('#emptySettings').onclick = () => {
+      state.tab = 'settings'
+      render()
+    }
     return
   }
 
@@ -282,12 +287,11 @@ function renderGrid() {
     empty.hidden = false
     empty.innerHTML = `<h2>没有待处理的录像了</h2>
       <p>填过信息的都收在「游戏录像」里，按游戏、年月日翻。</p>
-      <div class="row"><button class="btn primary" id="emptyBrowse">去游戏录像</button><button class="btn" id="emptyAdd">添加视频</button></div>`
+      <div class="row"><button class="btn primary" id="emptyBrowse">去游戏录像</button></div>`
     document.querySelector('#emptyBrowse').onclick = () => {
       state.tab = 'browse'
       render()
     }
-    document.querySelector('#emptyAdd').onclick = () => openAddModal()
     return
   }
 
@@ -904,8 +908,6 @@ function renderSettings() {
   $('#cfgMoveTarget').disabled = config.moveEnabled !== true
   $('#cfgFrames').value = String(config.frames || 6)
   if (document.activeElement?.id !== 'cfgScanFolder') $('#cfgScanFolder').value = config.scanFolder || ''
-  $('#cfgScanDeep').checked = config.scanDeep === true
-  $('#cfgScanOnOpen').checked = config.scanOnOpen === true
   const dataDirBox = $('#dataDirBox')
   if (dataDirBox && state.live?.dataDir) {
     dataDirBox.innerHTML = `<code style="word-break:break-all">${esc(state.live.dataDir)}</code>`
@@ -978,7 +980,8 @@ let autoScanDone = false
 function autoScanOnOpen() {
   if (autoScanDone) return
   const config = state.live?.config || {}
-  if (!config.scanOnOpen || !config.scanFolder) return
+  // 只要设了文件夹，打开页面就收一次；没有额外的开关
+  if (!config.scanFolder) return
   autoScanDone = true
   // 一分钟内扫过就不再扫：来回切页签时不反复读盘
   let last = 0
@@ -1018,100 +1021,6 @@ async function remapPaths(dryRun) {  const from = $('#remapFrom').value.trim()
     }
   } catch (error) {
     toast(error.message, 'err')
-  }
-}
-
-/* ------------------------------------------------------------------ 添加视频 */
-function openAddModal() {
-  state.addFolder = ''
-  state.addFiles = []
-  $('#addFolder').value = ''
-  $('#addList').innerHTML = ''
-  $('#addFoot').hidden = true
-  $('#addModal').hidden = false
-  document.body.style.overflow = 'hidden'
-  $('#addFolder').focus()
-}
-
-function closeAddModal() {
-  $('#addModal').hidden = true
-  document.body.style.overflow = ''
-}
-
-async function listFolderFiles() {
-  const folder = $('#addFolder').value.trim()
-  if (!folder) {
-    toast('先填一个文件夹路径', 'err')
-    return
-  }
-  $('#btnListFiles').disabled = true
-  try {
-    const result = await api('/list-folder', { method: 'POST', body: { folder } })
-    state.addFolder = result.folder || folder
-    state.addFiles = (result.files || []).map((file) => ({ ...file, checked: false }))
-    renderAddList()
-    if (!state.addFiles.length) toast('这个文件夹里没找到视频文件', 'err')
-    else if (result.total > state.addFiles.length) toast(`只列出前 ${state.addFiles.length} 个（共 ${result.total} 个）`)
-  } catch (error) {
-    toast(error.message, 'err')
-  } finally {
-    $('#btnListFiles').disabled = false
-  }
-}
-
-function renderAddList() {
-  const box = $('#addList')
-  const files = state.addFiles || []
-  if (!files.length) {
-    box.innerHTML = ''
-    $('#addFoot').hidden = true
-    return
-  }
-  box.innerHTML = files
-    .map((file, index) => {
-      const meta = [file.sizeText, dateText(file.mtimeMs), file.recording ? '可能还在录' : ''].filter(Boolean).join(' · ')
-      const disabled = file.inLibrary
-      return `<label class="add-row ${file.checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}" data-index="${index}">
-        <input type="checkbox" ${file.checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
-        <span class="add-name">${esc(file.name)}</span>
-        <span class="add-meta">${disabled ? '已在档案里' : meta}</span>
-      </label>`
-    })
-    .join('')
-  box.querySelectorAll('.add-row').forEach((row) => {
-    row.onclick = (event) => {
-      const index = Number(row.dataset.index)
-      const file = state.addFiles[index]
-      if (!file || file.inLibrary) return
-      event.preventDefault()
-      file.checked = !file.checked
-      renderAddList()
-    }
-  })
-  $('#addFoot').hidden = false
-  const selected = files.filter((file) => file.checked).length
-  $('#btnAddSelected').textContent = selected ? `加入档案（${selected}）` : '加入档案'
-  $('#btnAddSelected').disabled = selected === 0
-}
-
-async function addSelectedFiles() {
-  const paths = state.addFiles.filter((file) => file.checked && !file.inLibrary).map((file) => file.path)
-  if (!paths.length) return
-  $('#btnAddSelected').disabled = true
-  try {
-    const result = await api('/add', { method: 'POST', body: { paths } })
-    const parts = [`加入 ${result.added} 个`]
-    if (result.relinked) parts.push(`认回 ${result.relinked} 个（路径变了的老记录）`)
-    if (result.skipped) parts.push(`跳过 ${result.skipped} 个（已在档案里）`)
-    if (result.errors?.length) parts.push(`${result.errors.length} 个失败`)
-    toast(parts.join('，'))
-    closeAddModal()
-    startPolling()
-    await load({ silent: true })
-  } catch (error) {
-    toast(error.message, 'err')
-  } finally {
-    $('#btnAddSelected').disabled = false
   }
 }
 
@@ -1196,7 +1105,6 @@ function bind() {
       if (target === 'detail') closeDetail()
       else if (target === 'gameModal') closeGameModal()
       else if (target === 'catModal') closeCategoryModal()
-      else if (target === 'addModal') closeAddModal()
       else if (target === 'deleteModal') closeDeleteModal()
     }
   })
@@ -1262,9 +1170,7 @@ function bind() {
     $(selector).addEventListener('input', markDirty)
   })
 
-  $('#btnManualAdd').onclick = () => openAddModal()
   $('#btnRescan').onclick = () => runScanFolder(true)
-  $('#btnListFiles').onclick = () => listFolderFiles()
 
   // 被嵌在 DSH 侧栏里时，给一个「弹成独立窗口」的出口：边聊边看
   if (window.self !== window.top) {
@@ -1278,24 +1184,9 @@ function bind() {
       else toast(`浏览器拦了新窗口，把 ${url} 复制到浏览器打开`, 'err')
     }
   }
-  $('#addFolder').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') listFolderFiles()
-  })
-  $('#btnSelectAll').onclick = () => {
-    for (const file of state.addFiles || []) if (!file.inLibrary) file.checked = true
-    renderAddList()
-  }
-  $('#btnSelectNone').onclick = () => {
-    for (const file of state.addFiles || []) file.checked = false
-    renderAddList()
-  }
-  $('#btnAddSelected').onclick = () => addSelectedFiles()
 
   $('#cfgFrames').onchange = (event) => patchConfig({ frames: Number(event.target.value) })
   $('#cfgScanFolder').onchange = (event) => patchConfig({ scanFolder: event.target.value.trim() })
-  $('#cfgScanDeep').onchange = (event) => patchConfig({ scanDeep: event.target.checked })
-  $('#cfgScanOnOpen').onchange = (event) => patchConfig({ scanOnOpen: event.target.checked })
-  $('#btnScanNow').onclick = () => runScanFolder(true)
   $('#btnDataDir').onclick = async () => {
     const target = $('#dataDirInput').value.trim()
     if (!target) {
@@ -1358,7 +1249,6 @@ function bind() {
       else if (!$('#detail').hidden) closeDetail()
       else if (!$('#gameModal').hidden) closeGameModal()
       else if (!$('#catModal').hidden) closeCategoryModal()
-      else if (!$('#addModal').hidden) closeAddModal()
       return
     }
     if (typing) return
@@ -1391,10 +1281,6 @@ load().then(() => {
 
 function applyHash() {
   const hash = String(location.hash || '')
-  if (hash === '#add') {
-    openAddModal()
-    return
-  }
   if (hash.startsWith('#browse')) {
     const parts = hash
       .slice('#browse'.length)
