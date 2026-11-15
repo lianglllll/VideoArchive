@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { Store } from '../lib/store.js'
+import { collectDeps } from '../lib/deps.js'
 
 const log = { info: () => {}, warn: (msg) => console.log('   [warn]', msg), error: () => {} }
 let fail = 0
@@ -48,6 +49,12 @@ const st4 = s4.status()
 check('文件夹不在 → 只读', st4.readOnly, true)
 check('文件夹不在 → 标记 missingScanFolder', st4.missingScanFolder, true)
 check('文件夹不在 → 没有被重建出来', fs.existsSync(gone), false)
+
+// ⑤ 依赖体检也不能把目录建出来
+const depsDir = path.join(os.tmpdir(), `va-deps-${Date.now()}`, '.VideoArchive')
+const s5 = new Store({ dataDir: depsDir, logger: log })
+await collectDeps({ ffmpeg: { resolve: () => ({ ok: false, tried: [] }), version: async () => '', hint: () => '装 ffmpeg' }, store: s5 })
+check('deps 体检不会建目录', fs.existsSync(path.dirname(depsDir)), false)
 
 fs.rmSync(root, { recursive: true, force: true })
 console.log(fail ? `\n✗ ${fail} 项不符合预期` : '\n✓ 全部符合预期')

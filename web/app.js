@@ -254,6 +254,8 @@ function closeSetupModal() {
 
 function maybeShowSetup() {
   const config = state.live?.config || {}
+  // 档案目录不可用（盘没接、文件夹改名）时不要弹「选个文件夹」，那看起来像插件被重置了
+  if (state.live?.storage && state.live.storage.ok === false) return
   if (config.scanFolder) return
   if (state.videos.length) return
   try {

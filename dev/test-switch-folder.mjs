@@ -15,6 +15,8 @@ function check(label, actual, expected) {
 const base = fs.mkdtempSync(path.join(os.tmpdir(), 'va-switch-'))
 const dirA = path.join(base, 'A', '.VideoArchive')
 const dirB = path.join(base, 'B', '.VideoArchive')
+fs.mkdirSync(path.join(base, 'A'), { recursive: true })
+fs.mkdirSync(path.join(base, 'B'), { recursive: true })
 
 const store = new Store({ dataDir: dirA, logger: log })
 store.patchConfig({ scanFolder: path.join(base, 'A') })
