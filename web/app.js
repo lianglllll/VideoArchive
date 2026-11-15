@@ -369,7 +369,7 @@ function filtered(source = state.videos) {
 }
 
 function cardHtml(item) {
-  const badge = item.state === 'missing'
+  const badge = item.missing || item.state === 'missing'
     ? '<span class="badge error">文件不在了</span>'
     : item.state === 'raw'
       ? '<span class="badge pending">缺 ffmpeg</span>'
@@ -1107,10 +1107,8 @@ async function runScanFolder(manual) {
   }
   try {
     const result = await api('/scan-folder', { method: 'POST', body: {} })
-    if (result.added || result.relinked) {
-      const parts = [`收了 ${result.added} 个新录像`]
-      if (result.relinked) parts.push(`认回 ${result.relinked} 个`)
-      toast(parts.join('，'))
+    if (result.added) {
+      toast(`收了 ${result.added} 个新录像`)
       startPolling()
       await load({ silent: true })
     } else if (manual) {
