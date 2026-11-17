@@ -552,7 +552,7 @@ select.chip {
 
 .games {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
 }
 
@@ -566,7 +566,7 @@ select.chip {
   /* 横着排：左边文字，右边封面 */
   display: flex;
   align-items: stretch;
-  min-height: 132px;
+  min-height: 104px;
 }
 
 .game-card:hover {
@@ -578,8 +578,8 @@ select.chip {
 .game-cover {
   position: relative;
   order: 2;
-  flex: 0 0 44%;
-  min-height: 132px;
+  flex: 0 0 42%;
+  min-height: 104px;
   background: #07070d;
   border-left: 1px solid var(--line);
 }
@@ -616,7 +616,7 @@ select.chip {
   order: 1;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
