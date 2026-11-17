@@ -643,8 +643,14 @@ function renderBrowse() {
       groups.set(key, group)
     }
     const list = [...groups.values()]
-    if (level === 'game') list.sort((a, c) => c.count - a.count || String(a.label).localeCompare(String(c.label), 'zh'))
-    else if (level === 'day') list.sort((a, c) => Number(a.key) - Number(c.key))
+    if (level === 'game') {
+      // 游戏层优先用游戏自己的封面（上传的图），没有才落到第一条视频的封面
+      for (const group of list) {
+        const game = (state.games || []).find((item) => String(item.name) === String(group.label))
+        if (game?.cover) group.cover = game.cover
+      }
+      list.sort((a, c) => c.count - a.count || String(a.label).localeCompare(String(c.label), 'zh'))
+    } else if (level === 'day') list.sort((a, c) => Number(a.key) - Number(c.key))
     else list.sort((a, c) => Number(c.key) - Number(a.key))
 
     body = list.length

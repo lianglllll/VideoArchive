@@ -552,7 +552,7 @@ select.chip {
 
 .games {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 16px;
 }
 
@@ -563,6 +563,10 @@ select.chip {
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.16s ease, border-color 0.16s, box-shadow 0.16s;
+  /* 横着排：左边文字，右边封面 */
+  display: flex;
+  align-items: stretch;
+  min-height: 132px;
 }
 
 .game-card:hover {
@@ -573,8 +577,11 @@ select.chip {
 
 .game-cover {
   position: relative;
-  aspect-ratio: 16 / 9;
+  order: 2;
+  flex: 0 0 44%;
+  min-height: 132px;
   background: #07070d;
+  border-left: 1px solid var(--line);
 }
 
 .game-cover img {
@@ -606,7 +613,14 @@ select.chip {
 }
 
 .game-body {
-  padding: 12px 14px 14px;
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
 }
 
 .game-body h3 {
@@ -1544,8 +1558,8 @@ select.chip {
   font-size: 12px;
   padding: 0 12px;
 }
-/* 游戏封面选择 */
-.game-cover {
+/* 游戏封面选择（弹窗里的预览） */
+.cover-preview {
   width: 96px;
   height: 54px;
   border-radius: 8px;
@@ -1558,14 +1572,14 @@ select.chip {
   flex: none;
 }
 
-.game-cover img {
+.cover-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.game-cover .placeholder {
+.cover-preview .placeholder {
   font-size: 11px;
   color: var(--faint);
 }
