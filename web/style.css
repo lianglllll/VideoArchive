@@ -563,9 +563,8 @@ select.chip {
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.16s ease, border-color 0.16s, box-shadow 0.16s;
-  /* 横着排：左边文字，右边封面 */
-  display: flex;
-  align-items: stretch;
+  /* 封面铺满整张卡，文字浮在上面 */
+  position: relative;
   min-height: 104px;
 }
 
@@ -576,12 +575,9 @@ select.chip {
 }
 
 .game-cover {
-  position: relative;
-  order: 2;
-  flex: 0 0 42%;
-  min-height: 104px;
+  position: absolute;
+  inset: 0;
   background: #07070d;
-  border-left: 1px solid var(--line);
 }
 
 .game-cover img {
@@ -603,6 +599,7 @@ select.chip {
 
 .game-cover .game-count {
   position: absolute;
+  z-index: 2;
   right: 9px;
   bottom: 9px;
   font-size: 11px;
@@ -613,14 +610,18 @@ select.chip {
 }
 
 .game-body {
-  order: 1;
-  flex: 1 1 auto;
+  position: relative;
+  z-index: 1;
   min-width: 0;
+  height: 100%;
+  min-height: 104px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 4px;
+  /* 压一层渐变，保证文字在图上能看清 */
+  background: linear-gradient(180deg, rgba(6, 6, 12, 0.05) 0%, rgba(6, 6, 12, 0.55) 52%, rgba(6, 6, 12, 0.88) 100%);
 }
 
 .game-body h3 {
