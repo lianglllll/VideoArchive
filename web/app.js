@@ -3,6 +3,17 @@ const API = '/video-archive/api'
 const REQUIRED_API = 2
 const $ = (selector) => document.querySelector(selector)
 
+/**
+ * 视频/封面这类「要按字节范围读」的地址，尽量走真实的 http 源。
+ * 嵌在 DSH 里时页面本身是 dsh-app:// 协议，相对地址会被那条通道代理，
+ * 而它不转发 Range —— 于是浏览器拿不到 MP4 末尾的 moov，卡在 0:00 黑屏。
+ */
+function mediaUrl(path) {
+  const origin = String(state.live?.origin || '').replace(/\/+$/, '')
+  if (origin && /^https?:/i.test(origin) && location.origin !== origin) return `${origin}${path}`
+  return path
+}
+
 const state = {
   videos: [],
   stats: {},
@@ -1061,7 +1072,7 @@ function refreshDetail(id) {
     return
   }
   const player = $('#player')
-  const src = `${API}/video?id=${encodeURIComponent(id)}`
+  const src = mediaUrl(`${API}/video?id=${encodeURIComponent(id)}`)
   if (player.dataset.id !== id) {
     player.dataset.id = id
     player.src = src
@@ -1071,6 +1082,16 @@ function refreshDetail(id) {
       hint.hidden = false
       hint.textContent = '这个格式浏览器放不了（比如部分 mkv/flv）。点「打开文件夹」，用系统播放器看。'
     }
+    // 拿不到分段读取时不会报错，只会一直 0:00 —— 超过 8 秒还没元数据就给个明确说法
+    clearTimeout(player._stallTimer)
+    player._stallTimer = setTimeout(() => {
+      if (player.readyState >= 1) return
+      const hint = $('#playerHint')
+      hint.hidden = false
+      hint.textContent =
+        '这个视频的索引（moov）在文件末尾，当前打开方式拿不到分段读取。点右上角 ↗ 用独立窗口打开，或点下方 📂 用系统播放器看。'
+    }, 8000)
+    player.addEventListener('loadedmetadata', () => clearTimeout(player._stallTimer), { once: true })
   }
 
   // 顶部只留游戏名，文件名不再重复显示（标题为空时用占位提示）
@@ -1538,7 +1559,7 @@ function restorePlayer() {
   if (!state.selected) return
   const player = $('#player')
   if (!player || player.src || $('#detail').hidden) return
-  player.src = `/video-archive/api/video?id=${encodeURIComponent(state.selected)}`
+  player.src = mediaUrl(`${API}/video?id=${encodeURIComponent(state.selected)}`)
 }
 
 document.addEventListener('visibilitychange', () => {
